@@ -373,7 +373,9 @@
     (define (log-slot slot) ; TODO: option verbose? oll logging function?
       (if (and (eq? (ly:context-property-where-defined context 'edition-engraver-log) context)
                (eq? #t (ly:context-property context 'edition-engraver-log #f)))
-          (ly:message "edition-engraver ~A ~A = \"~A\" : ~A @ ~A" context-edition-id context-name (if (symbol? context-id) (symbol->string context-id) "") slot (ly:context-current-moment context))))
+          (ly:message "edition-engraver ~A ~A = \"~A\" : ~A @ ~A" context-edition-id context-name
+            (if (symbol? context-id) (symbol->string context-id) "") slot (ly:context-current-moment context)))
+      ) ; log-slot
 
     ; find mods for the current time-spec
     (define (find-mods)
@@ -382,7 +384,19 @@
               (measurePos (ly:context-property context 'measurePosition))
               (current-mods (tree-get context-mods (list measure measurePos))))
         (if (list? current-mods) current-mods '())
-        ))
+        )) ; find-mods
+
+    (define (track-mark mod)
+      (let ((curmark (ly:context-property context 'rehearsalMark #f)))
+        ;(if (not (eq? curmark rehearsalMark))
+        (let ((label (ly:music-property mod 'label))
+              (moment (ly:context-current-moment context))
+              (measure (ly:context-property context 'currentBarNumber))
+              (measurePos (ly:context-property context 'measurePosition)))
+          (set! rehearsalMark curmark)
+          (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
+          ));)
+      )
 
     ; define start-translation-timestep to use it in initialize if needed
     (define (start-translation-timestep trans)
@@ -408,21 +422,14 @@
               ((apply-context? mod) (do-apply context mod))
 
               ((and (ly:music? mod)(eq? 'MarkEvent (ly:music-property mod 'name)))
-               (let ((curmark (ly:context-property context 'rehearsalMark #f)))
-                 ;(if (not (eq? curmark rehearsalMark))
-                 (let ((label (ly:music-property mod 'label))
-                       (moment (ly:context-current-moment context))
-                       (measure (ly:context-property context 'currentBarNumber))
-                       (measurePos (ly:context-property context 'measurePosition)))
-                   (set! rehearsalMark curmark)
-                   (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
-                   )));)
+               (track-mark mod)
+               )
 
               ((ly:music? mod) (ly:context-mod-apply! context (context-mod-from-music mod)))
               )
              ) (find-mods)))
       (set! start-translation-timestep-moment #f)
-      )
+      ) ; start-translation-timestep
 
 
     ;(ly:message "~A ~A" (ly:context-id context) context-id)
@@ -432,6 +439,7 @@
        ; initialize engraver with its own id
        (initialize .
          ,(lambda (trans)
+
             (define (find-edition-id context)
               (if (ly:context? context)
                   (let ((edition-id (ly:context-property context 'edition-id #f))
@@ -451,7 +459,7 @@
                                 )
                             edition-id) ; no inherit
                         (find-edition-id (ly:context-parent context)))) ; no edition-id
-                  '())) ; if context
+                  '())) ; find-edition-id
 
             (set! context-edition-id (find-edition-id context))
             (set! context-edition-number
@@ -509,19 +517,13 @@
               (set! start-translation-timestep-moment now))
             ))
 
+       ; listeners
        (listeners
+        ; listen for mark events to allow addressing X past mark Y
         (mark-event .
           ,(lambda (engraver event)
              (if (eq? 'Score context-name) ; TODO: rehearsalMark context
-                 (let ((curmark (ly:context-property context 'rehearsalMark #f)))
-                   ;(if (not (eq? curmark rehearsalMark))
-                   (let ((label (ly:event-property event 'label))
-                          (moment (ly:context-current-moment context))
-                         (measure (ly:context-property context 'currentBarNumber))
-                         (measurePos (ly:context-property context 'measurePosition)))
-                     (set! rehearsalMark curmark)
-                     (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
-                     ));)
+                 (track-mark (ly:event-property event 'music-cause))
                  )))
         )
 
