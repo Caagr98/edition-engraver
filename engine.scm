@@ -410,12 +410,13 @@
               ((and (ly:music? mod)(eq? 'MarkEvent (ly:music-property mod 'name)))
                (let ((curmark (ly:context-property context 'rehearsalMark #f)))
                  ;(if (not (eq? curmark rehearsalMark))
-                     (let ((moment (ly:context-current-moment context))
-                           (measure (ly:context-property context 'currentBarNumber))
-                           (measurePos (ly:context-property context 'measurePosition)))
-                       (set! rehearsalMark curmark)
-                       (ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
-                       )));)
+                 (let ((label (ly:music-property mod 'label))
+                       (moment (ly:context-current-moment context))
+                       (measure (ly:context-property context 'currentBarNumber))
+                       (measurePos (ly:context-property context 'measurePosition)))
+                   (set! rehearsalMark curmark)
+                   (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
+                   )));)
 
               ((ly:music? mod) (ly:context-mod-apply! context (context-mod-from-music mod)))
               )
@@ -508,12 +509,21 @@
               (set! start-translation-timestep-moment now))
             ))
 
-(listeners
- (mark-event .
-   ,(lambda (engraver event)
-      (ly:message "mark: ~A" context-name)
-      ))
- )
+       (listeners
+        (mark-event .
+          ,(lambda (engraver event)
+             (if (eq? 'Score context-name) ; TODO: rehearsalMark context
+                 (let ((curmark (ly:context-property context 'rehearsalMark #f)))
+                   ;(if (not (eq? curmark rehearsalMark))
+                   (let ((label (ly:event-property event 'label))
+                          (moment (ly:context-current-moment context))
+                         (measure (ly:context-property context 'currentBarNumber))
+                         (measurePos (ly:context-property context 'measurePosition)))
+                     (set! rehearsalMark curmark)
+                     (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
+                     ));)
+                 )))
+        )
 
        ; paper columns --> breaks
        (acknowledgers ; TODO add acknowledgers from mods

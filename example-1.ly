@@ -47,17 +47,19 @@
 \new Staff = "BACH" \with {
   \editionID along
 } \new Voice <<
-  { s1*13 \mark \default }
+  % add a meta track like a global variable
+  { s1*13 \mark \default s1*4 \mark "Blupp" }
+  % some music with instantly created voice
   {
-  R1
-  <<
-    \repeat unfold 10 \relative c'' { bes4 a c b } \\
-    \repeat unfold 10 \relative c' { d4. e4 f8 g4 }
-  >>
-  <<
-    \repeat unfold 10 \relative c'' { bes4 a c b } \\
-    \repeat unfold 10 \relative c' { d4. e4 f8 g4 } \\
-    \repeat unfold 10 \relative c' { f2 a }
-  >>
-}
+    R1
+    <<
+      \repeat unfold 10 \relative c'' { bes4 a c b } \\
+      \repeat unfold 10 \relative c' { d4. e4 f8 g4 }
+    >>
+    <<
+      \repeat unfold 10 \relative c'' { bes4 a c b } \\
+      \repeat unfold 10 \relative c' { d4. e4 f8 g4 } \\
+      \repeat unfold 10 \relative c' { f2 a }
+    >>
+  }
 >>
