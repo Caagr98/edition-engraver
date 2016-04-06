@@ -353,6 +353,8 @@
     ))
 ;;;;
 
+(define track-marks '())
+
 ; the edition-engraver
 (define-public (edition-engraver context)
   (let ( (context-edition-id '()) ; it receives the context-edition-id from a context-property while initializing
@@ -387,47 +389,47 @@
         )) ; find-mods
 
     (define (track-mark mod)
-      (let ((curmark (ly:context-property context 'rehearsalMark #f)))
-        ;(if (not (eq? curmark rehearsalMark))
-        (let ((label (ly:music-property mod 'label))
-              (moment (ly:context-current-moment context))
-              (measure (ly:context-property context 'currentBarNumber))
-              (measurePos (ly:context-property context 'measurePosition)))
-          (set! rehearsalMark curmark)
-          (ly:message "mark: ~A \"~A\" @ ~A ~A (~A)" rehearsalMark label measure measurePos moment)
-          ));)
-      )
+      (let ((curmark (ly:context-property context 'rehearsalMark #f))
+            (label (ly:music-property mod 'label #f))
+            (moment (ly:context-current-moment context))
+            (measure (ly:context-property context 'currentBarNumber))
+            (measurePos (ly:context-property context 'measurePosition)))
+        (set! rehearsalMark (if (markup? label) (markup->string label) curmark))
+        (ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
+        (set! track-marks (assoc-set! track-marks rehearsalMark (list moment measure measurePos)))
+        )) ; track-mark
+
+    (define (apply-mod mod)
+      (cond
+       ((override? mod)
+        (if (is-revert mod)
+            (do-revert context mod)
+            (do-override context mod))
+        ; if it is once, add to once-list
+        (if (is-once mod) (set! once-mods (cons mod once-mods)))
+        )
+
+       ((propset? mod)
+        (do-propset context mod)
+        (if (is-once mod) (set! once-mods (cons mod once-mods)))
+        )
+
+       ((apply-context? mod) (do-apply context mod))
+
+       ((and (ly:music? mod)(eq? 'MarkEvent (ly:music-property mod 'name)))
+        (track-mark mod)
+        )
+
+       ((ly:music? mod) (ly:context-mod-apply! context (context-mod-from-music mod)))
+       )) ; apply-mod
 
     ; define start-translation-timestep to use it in initialize if needed
     (define (start-translation-timestep trans)
       (log-slot "start-translation-timestep")
       (if (or (not start-translation-timestep-moment)
               (ly:moment<? start-translation-timestep-moment (ly:context-now context)))
-          (for-each
-           (lambda (mod)
-             (cond
-              ((override? mod)
-               (if (is-revert mod)
-                   (do-revert context mod)
-                   (do-override context mod))
-               ; if it is once, add to once-list
-               (if (is-once mod) (set! once-mods (cons mod once-mods)))
-               )
+          (for-each apply-mod (find-mods)))
 
-              ((propset? mod)
-               (do-propset context mod)
-               (if (is-once mod) (set! once-mods (cons mod once-mods)))
-               )
-
-              ((apply-context? mod) (do-apply context mod))
-
-              ((and (ly:music? mod)(eq? 'MarkEvent (ly:music-property mod 'name)))
-               (track-mark mod)
-               )
-
-              ((ly:music? mod) (ly:context-mod-apply! context (context-mod-from-music mod)))
-              )
-             ) (find-mods)))
       (set! start-translation-timestep-moment #f)
       ) ; start-translation-timestep
 
@@ -568,7 +570,7 @@
        (process-music .
          ,(lambda (trans)
             (log-slot "process-music")
-            (for-each ; revert/reset once override/set
+            (for-each
               (lambda (mod)
                 (cond
                  ((and (ly:music? mod) (eq? 'TextScriptEvent (ly:music-property mod 'name)))
@@ -589,7 +591,6 @@
                                 (set! text (rmf rmi rmc))
                                 (ly:context-set-property! rmc 'rehearsalMark (+ 1 rmi))
                                 ))))
-                    ;(ly:message "mark ~A" text)
                     (ly:grob-set-property! grob 'text text)
                     ))
                  ))
@@ -605,6 +606,7 @@
                       (measure-position (ly:context-property context 'measurePosition)))
                   (ly:message "finalize ~A with ~A @ ~A / ~A-~A"
                     context-edition-id edition-targets current-moment current-measure measure-position)
+                  (display track-marks)
                   ; TODO format <file>.edition.log
                   (with-output-to-file
                    (string-append (ly:parser-output-name (*parser*)) ".edition.log")

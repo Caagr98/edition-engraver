@@ -23,7 +23,7 @@
 \editionMod test 5 1/4 sing.with.bach.along.Staff ^"Hallo"
 
 \editionMod test 9 0/4 sing.with.bach.Score \mark \default
-\editionMod test 10 0/4 sing.with.bach.Score \mark "Tach"
+\editionMod test 10 0/4 sing.with.bach.Score \mark \markup \bold "Tach"
 \editionMod test 11 0/4 sing.with.bach.Score \mark \default
 \editionMod test 17 0/4 sing.with.bach.Score \mark 4
 
