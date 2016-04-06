@@ -366,6 +366,7 @@
          (context-mods #f)
          (once-mods '())
          (start-translation-timestep-moment #f)
+         (rehearsalMark #f)
          )
 
     ; log slot calls
@@ -398,11 +399,24 @@
                ; if it is once, add to once-list
                (if (is-once mod) (set! once-mods (cons mod once-mods)))
                )
+
               ((propset? mod)
                (do-propset context mod)
                (if (is-once mod) (set! once-mods (cons mod once-mods)))
                )
+
               ((apply-context? mod) (do-apply context mod))
+
+              ((and (ly:music? mod)(eq? 'MarkEvent (ly:music-property mod 'name)))
+               (let ((curmark (ly:context-property context 'rehearsalMark #f)))
+                 ;(if (not (eq? curmark rehearsalMark))
+                     (let ((moment (ly:context-current-moment context))
+                           (measure (ly:context-property context 'currentBarNumber))
+                           (measurePos (ly:context-property context 'measurePosition)))
+                       (set! rehearsalMark curmark)
+                       (ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
+                       )));)
+
               ((ly:music? mod) (ly:context-mod-apply! context (context-mod-from-music mod)))
               )
              ) (find-mods)))
@@ -494,6 +508,13 @@
               (set! start-translation-timestep-moment now))
             ))
 
+(listeners
+ (mark-event .
+   ,(lambda (engraver event)
+      (ly:message "mark: ~A" context-name)
+      ))
+ )
+
        ; paper columns --> breaks
        (acknowledgers ; TODO add acknowledgers from mods
          (paper-column-interface .
@@ -556,6 +577,7 @@
                                 (set! text (rmf rmi rmc))
                                 (ly:context-set-property! rmc 'rehearsalMark (+ 1 rmi))
                                 ))))
+                    ;(ly:message "mark ~A" text)
                     (ly:grob-set-property! grob 'text text)
                     ))
                  ))

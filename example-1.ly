@@ -21,8 +21,11 @@
 \editionMod test 5 0/4 sing.with.bach.along.Staff \bar ".|:-||"
 
 \editionMod test 5 1/4 sing.with.bach.along.Staff ^"Hallo"
-\editionMod test 9 0/4 sing.with.bach.along.Staff \mark \default
-\editionMod test 10 0/4 sing.with.bach.along.Staff \mark \default
+
+\editionMod test 9 0/4 sing.with.bach.Score \mark \default
+\editionMod test 10 0/4 sing.with.bach.Score \mark "Tach"
+\editionMod test 11 0/4 sing.with.bach.Score \mark \default
+\editionMod test 17 0/4 sing.with.bach.Score \mark 4
 
 % "Install" the edition-engraver in a number of contexts.
 % The order is not relevant,
@@ -43,7 +46,9 @@
 
 \new Staff = "BACH" \with {
   \editionID along
-} {
+} \new Voice <<
+  { s1*13 \mark \default }
+  {
   R1
   <<
     \repeat unfold 10 \relative c'' { bes4 a c b } \\
@@ -55,3 +60,4 @@
     \repeat unfold 10 \relative c' { f2 a }
   >>
 }
+>>
