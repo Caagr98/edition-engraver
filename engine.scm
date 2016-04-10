@@ -396,7 +396,15 @@
             (measure (ly:context-property context 'currentBarNumber))
             (measurePos (ly:context-property context 'measurePosition)))
         (set! rehearsalMark (if (markup? label) (markup->string label) curmark))
-        (ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
+
+
+; collect all mods (for all ed-engravers) related to this mark
+; all engravers have to be registered ...
+; start-translation-timestep for mods at this mark
+
+
+(ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
+
         (set! track-marks (assoc-set! track-marks rehearsalMark (list moment measure measurePos)))
         )) ; track-mark
 
