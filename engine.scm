@@ -586,6 +586,13 @@
              (if (eq? 'Score context-name) ; TODO: rehearsalMark context
                  (track-mark (ly:event-property event 'music-cause))
                  )))
+        (StreamEvent .
+          ,(lambda (engraver event)
+             (let ((mus (ly:event-property event 'music-cause)))
+               (if (ly:music? mus)
+               (ly:message "M ~A ~A" (ly:music-property mus 'name) (ly:music-property mus 'index))
+               (ly:message "E ~A" event)
+           ))))
         )
 
        ; paper columns --> breaks
