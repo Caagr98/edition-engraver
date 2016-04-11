@@ -30,7 +30,7 @@
 \editionModMarked test Tach 6/4 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
 \editionModMarked test 2 3/8 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
 \editionModMarked test 2 4/8 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
-% overrides are not applied on moment 0 after mark!
+% overrides are not applied on moment 0 after mark! (TODO!)
 \editionModMarked test Blupp 0/8 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
 
 % "Install" the edition-engraver in a number of contexts.
