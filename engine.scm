@@ -324,6 +324,26 @@
    (symbol? integer? short-mom? list? music-or-context-mod?)
    (edition-mod edition-target measure (short-mom->moment moment) context-edition-id mods)))
 
+; add modification(s)
+(define-public (edition-mod-marked edition-target mark moment context-edition-id mods)
+  (cond
+   ((ly:context-mod? mods) (set! mods (list mods))) ; apply context-mod
+   ((ly:music? mods) (set! mods (collect-mods mods #f))) ; collect mods from music expression
+   )
+  (let* ((mod-path `(_MARKED_ ,mark ,moment ,@context-edition-id))
+         (tmods (tree-get mod-tree mod-path))
+         (tmods (if (list? tmods) tmods '())))
+    ; (ly:message "mods ~A" mods)
+    (tree-set! mod-tree mod-path (append tmods mods))
+    ))
+(define (string-or-integer? v)(or (integer? v)(string? v)))
+(define-public editionModMarked
+  (define-void-function
+   (edition-target mark moment context-edition-id mods)
+   (symbol? string-or-integer? short-mom? list? music-or-context-mod?)
+   (edition-mod-marked edition-target mark (short-mom->moment moment) context-edition-id mods)))
+
+
 ; add modification(s) on multiple times
 (define-public (edition-mod-list edition-target context-edition-id mods mom-list)
   (for-each
@@ -353,7 +373,7 @@
     ))
 ;;;;
 
-(define track-marks '())
+(define edition-mods (tree-create 'mod-trees))
 
 ; the edition-engraver
 (define-public (edition-engraver context) ; TODO better use make-engraver macro?
@@ -363,8 +383,8 @@
          (context-id
           (let ((cid (ly:context-id context))) ; the context-id assigned by \new Context = "the-id" ...
             (if (> (string-length cid) 0)
-                (string->symbol cid)
-                #f)))
+                (string->symbol cid) ; use symbol
+                #f))) ; set to false if not defined
          (context-mods #f)
          (once-mods '())
          (start-translation-timestep-moment #f)
@@ -397,15 +417,22 @@
             (measurePos (ly:context-property context 'measurePosition)))
         (set! rehearsalMark (if (markup? label) (markup->string label) curmark))
 
+        ; collect all mods (for all ed-engravers) related to this mark
+        (let ((mod-tree (tree-get-tree mod-tree `(_MARKED_ ,rehearsalMark))))
+          (if (tree? mod-tree)
+              (tree-walk mod-tree '()
+                (lambda (path k val)
+                  (ly:message "marked ~A" path)
+                  (let ((ctree (tree-get edition-mods (cdr path))))
+                    (if (tree? ctree)
+                        (tree-set! ctree (list (ly:moment-add (ly:context-now context) (car path))) val)
+                        ))))
+              (ly:message "no marked mods")
+              ))
+        ; start-translation-timestep for mods at this mark
 
-; collect all mods (for all ed-engravers) related to this mark
-; all engravers have to be registered ...
-; start-translation-timestep for mods at this mark
 
-
-(ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
-
-        (set! track-marks (assoc-set! track-marks rehearsalMark (list moment measure measurePos)))
+        (ly:message "mark: ~A @ ~A ~A (~A)" rehearsalMark measure measurePos moment)
         )) ; track-mark
 
     ; apply overrides, sets, context-mods
@@ -442,7 +469,7 @@
               (ly:moment<? start-translation-timestep-moment (ly:context-now context)))
           (for-each apply-mod (find-mods)))
 
-      (set! start-translation-timestep-moment #f)
+      (set! start-translation-timestep-moment (ly:context-now context))
       ) ; start-translation-timestep
 
 
@@ -512,14 +539,18 @@
                                  (tree-set! context-mods subpath
                                    (if (list? submods) (append submods val) val))
                                  ))))
-                       ))))
+                       ))
+                 ; register local mod-tree
+                 (tree-merge! edition-mods context-edition-sid (lambda (a b) (if (list? a) (append a b) b)) (list context-mods))
+                 ))
+             ; paths to look for mods
              `((,@context-edition-id ,context-name)
                ,@(if context-id `(
                                    (,@context-edition-id ,context-id)
                                    (,@context-edition-id ,context-name ,context-id)
                                    ) '())
                (,@context-edition-id ,context-name ,(string->symbol (base26 context-edition-number)))
-               ))
+               )) ; for-each context-edition-sid
 
             (log-slot "initialize")
             ; if the now-moment is greater than 0, this is an instantly created context,
@@ -576,6 +607,7 @@
                  ))
               once-mods)
             (set! once-mods '()) ; reset once-mods
+            (set! start-translation-timestep-moment #f) ; reset moment
             ))
        ; process music
        (process-music .
@@ -617,8 +649,8 @@
                       (measure-position (ly:context-property context 'measurePosition)))
                   (ly:message "finalize ~A with ~A @ ~A / ~A-~A"
                     context-edition-id edition-targets current-moment current-measure measure-position)
-                  (display track-marks)
                   ; TODO format <file>.edition.log
+                  ;(display edition-mods)
                   (with-output-to-file
                    (string-append (ly:parser-output-name (*parser*)) ".edition.log")
                    (lambda ()

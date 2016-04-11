@@ -27,6 +27,8 @@
 \editionMod test 11 0/4 sing.with.bach.Score \mark \default
 \editionMod test 17 0/4 sing.with.bach.Score \mark 4
 
+\editionModMarked test Tach 1/4 sing.with.bach.along.Staff \once \override NoteHead.color = #yellow
+
 % "Install" the edition-engraver in a number of contexts.
 % The order is not relevant,
 % Dynamics is not used in this example, Foo triggers an oll:warn
