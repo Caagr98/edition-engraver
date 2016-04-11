@@ -434,10 +434,13 @@
                         (for-each
                          (lambda (ctree)
                            (if (tree? ctree)
-                               ; TODO append values!
-                               (tree-set! ctree (list (ly:moment-add (ly:context-now context) (car path)))
-                                 (append val (collect-mods #{ ^\markup { \tiny { $(format "~A" rehearsalMark) + $(format "~A" (car path)) } } #} #f)))
-                               ))
+                               (let* ((gmoment (ly:moment-add (ly:context-now context) (car path)))
+                                      (tval (tree-get ctree (list gmoment))))
+                                 (tree-set! ctree (list gmoment)
+                                   (append (if (list? tval) tval '()) val (collect-mods #{ ^\markup { \tiny { $(format "~A" rehearsalMark) + $(format "~A" (car path)) } } #} #f)))
+                                 (if (equal? (ly:make-moment 0/8) (car path))
+                                     (ly:message "not applied: ~A" val))
+                                 )))
                          ltree)))
                   ))
 
