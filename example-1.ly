@@ -27,7 +27,8 @@
 \editionMod test 11 0/4 sing.with.bach.Score \mark \default
 \editionMod test 17 0/4 sing.with.bach.Score \mark 4
 
-\editionModMarked test Tach 1/4 sing.with.bach.along.Staff \once \override NoteHead.color = #yellow
+\editionModMarked test Tach 6/4 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
+\editionModMarked test 2 3/8 sing.with.bach.along.Staff \once \override NoteHead.color = #(rgb-color .8 .6 .3)
 
 % "Install" the edition-engraver in a number of contexts.
 % The order is not relevant,

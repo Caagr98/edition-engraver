@@ -404,7 +404,13 @@
       (let* (;(moment (ly:context-current-moment context))
               (measure (ly:context-property context 'currentBarNumber))
               (measurePos (ly:context-property context 'measurePosition))
-              (current-mods (tree-get context-mods (list measure measurePos))))
+              (current-mods (tree-get context-mods (list measure measurePos)))
+              (now-mods (tree-get context-mods (list (ly:context-now context)))))
+        (if (list? now-mods)
+            (set! current-mods
+                  (if (list? current-mods)
+                      (append current-mods now-mods)
+                      now-mods)))
         (if (list? current-mods) current-mods '())
         )) ; find-mods
 
@@ -423,10 +429,18 @@
               (tree-walk mod-tree '()
                 (lambda (path k val)
                   (ly:message "marked ~A" path)
-                  (let ((ctree (tree-get edition-mods (cdr path))))
-                    (if (tree? ctree)
-                        (tree-set! ctree (list (ly:moment-add (ly:context-now context) (car path))) val)
-                        ))))
+                  (let ((ltree (tree-get edition-mods (cdr path))))
+                    (if (list? ltree)
+                        (for-each
+                         (lambda (ctree)
+                           (if (tree? ctree)
+                               ; TODO append values!
+                               (tree-set! ctree (list (ly:moment-add (ly:context-now context) (car path)))
+                                 (append val (collect-mods #{ ^\markup { \tiny { $(format "~A" rehearsalMark) + $(format "~A" (car path)) } } #} #f)))
+                               ))
+                         ltree)))
+                  ))
+
               (ly:message "no marked mods")
               ))
         ; start-translation-timestep for mods at this mark
