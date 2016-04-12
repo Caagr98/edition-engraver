@@ -588,11 +588,12 @@
                  )))
         (StreamEvent .
           ,(lambda (engraver event)
+             (if (eq? 'Score context-name)
              (let ((mus (ly:event-property event 'music-cause)))
                (if (ly:music? mus)
                (ly:message "M ~A ~A" (ly:music-property mus 'name) (ly:music-property mus 'index))
                (ly:message "E ~A" event)
-           ))))
+           )))))
         )
 
        ; paper columns --> breaks
