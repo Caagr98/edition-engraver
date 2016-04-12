@@ -596,7 +596,10 @@
                        (index (ly:event-property event 'index)))
                    ; if event has an index ... this should be added automatically?!?
                    (if (symbol? index)
-                       (let ((tweaks `((color . ,blue)(extra-offset . (0 . -.7))))) ; hardcoded tweaks to see the effect
+                       (let ((tweaks `((color . ,blue)
+                                       (extra-offset . (0 . -.7))
+                                       (control-points . ((0 . 0)(2 . 5)(4 . -5)(6 . 0))) ; TODO howto integrate shape?
+                                       ))) ; hardcoded tweaks to see the effect
                          (ly:message "M ~A ~A" (car (ly:event-property event 'class)) index)
                          (ly:event-set-property! event 'tweaks (append (ly:event-property event 'tweaks) tweaks))
                          ))
