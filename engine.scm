@@ -318,13 +318,14 @@
     ))
 ; predicate for music or context-mod
 (define-public (music-or-context-mod? v) (or (ly:music? v)(ly:context-mod? v)))
+; lily-function to enter mods
 (define-public editionMod
   (define-void-function
    (edition-target measure moment context-edition-id mods)
    (symbol? integer? short-mom? list? music-or-context-mod?)
    (edition-mod edition-target measure (short-mom->moment moment) context-edition-id mods)))
 
-; add modification(s)
+; add modification(s) after mark
 (define-public (edition-mod-marked edition-target mark moment context-edition-id mods)
   (cond
    ((ly:context-mod? mods) (set! mods (list mods))) ; apply context-mod
@@ -586,15 +587,18 @@
              (if (eq? 'Score context-name) ; TODO: rehearsalMark context
                  (track-mark (ly:event-property event 'music-cause))
                  )))
+        ; listen for events to add tweaks by index
         (StreamEvent .
           ,(lambda (engraver event)
              (if (eq? 'Score context-name)
                  (let ((cls (ly:event-property event 'class))
-                       (mus (ly:event-property event 'music-cause)))
-                   (ly:message "E ~A" cls)
-                   (if (ly:music? mus)
-                       (let ((type (ly:music-property mus 'name)))
-                         (ly:message "M ~A ~A" type (ly:music-property mus 'index))
+                       (mus (ly:event-property event 'music-cause))
+                       (index (ly:event-property event 'index)))
+                   ; if event has an index ... this should be added automatically?!?
+                   (if (symbol? index)
+                       (let ((tweaks `((color . ,blue)(extra-offset . (0 . -.7))))) ; hardcoded tweaks to see the effect
+                         (ly:message "M ~A ~A" (car (ly:event-property event 'class)) index)
+                         (ly:event-set-property! event 'tweaks (append (ly:event-property event 'tweaks) tweaks))
                          ))
                    ))))
         )

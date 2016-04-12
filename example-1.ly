@@ -50,6 +50,12 @@
   }
 }
 
+% set an index to the given music object
+setIndex =
+#(define-music-function (i m)(symbol? ly:music?)
+   (ly:music-set-property! m 'index i)
+   m)
+
 \new Staff = "BACH" \with {
   \editionID along
 } \new Voice <<
@@ -61,6 +67,11 @@
     <<
       \repeat unfold 10 \relative c'' { bes4 a c b } \\
       \repeat unfold 10 \relative c' { d4. e4 f8 g4 }
+    >>
+    <<
+      \relative c'' { bes4 \setIndex A a c b } \\
+      \relative c' { d4. e4 f8-\setIndex XI ( g4) } \\
+      \relative c' { f2 a }
     >>
     <<
       \repeat unfold 10 \relative c'' { bes4 a c b } \\
