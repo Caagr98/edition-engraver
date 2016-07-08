@@ -98,7 +98,7 @@ modproc = \once \override NoteHead.color = \etc
 % for more advanced mods you'll use #(lambda (val) #{ ... #})
 
 % initialize ModList with:
-% lid: modlist
+% list-id: modlist
 % edition-target: partitur
 % edition-context-id: Score
 % proc: ... \once \override NoteHead.color = #val
