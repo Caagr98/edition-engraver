@@ -29,10 +29,24 @@
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\version "2.19.36"
-\include "oll-core/package.ily"
+\version "2.19.37"
+\include "edition-engraver.ily"
 
-% activate edition-engraver module
-#(use-modules (edition-engraver engine))
-% Function to consist the EE in multiple contexts
-\include "oll-core/util/consist-to-contexts.ily"
+\paper {
+  ragged-right = ##f
+}
+
+% The edition-engraver is now able to produce extenders and hyphens.
+% This might not be necessary very often with autoextenders, but still there are use-cases.
+
+
+\consistToContexts #edition-engraver Score.Staff.Voice.Lyrics
+
+\addEdition test
+\editionMod test 1 1/4 Lyrics #(make-music 'ExtenderEvent)
+\editionMod test 2 1/4 Lyrics #(make-music 'HyphenEvent)
+
+\relative {
+  c''4 a8\melisma bes8\melismaEnd c4 d | c a8\melisma b\melismaEnd c4 c
+} \addlyrics { Say what you think, say what you need. }
+
